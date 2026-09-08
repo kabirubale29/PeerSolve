@@ -13,9 +13,9 @@ export const REPUTATION_RULES = {
 export const REPORT_UNDER_REVIEW_THRESHOLD = 3;
 
 export const AI_CONFIG = {
-  MODEL_NAME: 'gemini-2.5-flash',
+  MODEL_NAME: 'gemini-3.6-flash',
   EMBEDDING_MODEL: 'text-embedding-004',
-  TIMEOUT_MS: 7000,
+  TIMEOUT_MS: 25000,
   RATE_LIMIT_WINDOW_MS: 60 * 1000, // 1 minute
   RATE_LIMIT_MAX_REQUESTS: 20,     // 20 requests per minute per IP/user
 };
