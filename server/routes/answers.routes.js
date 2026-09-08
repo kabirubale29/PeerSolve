@@ -327,9 +327,42 @@ router.post('/:id/accept', requireAuth, async (req, res) => {
       question.status = 'solved';
 
       // Award +25 reputation to answerer
-      const answerAuthor = store.users.find(u => u.id === answer.user_id);
-      if (answerAuthor) {
-        answerAuthor.reputation += REPUTATION_RULES.ANSWER_ACCEPTED;
+      let answerAuthor = store.users.find(u => u.id === answer.user_id);
+      if (!answerAuthor) {
+        answerAuthor = {
+          id: answer.user_id,
+          name: 'Student',
+          year: 2,
+          branch: 'Computer Science',
+          role: 'junior',
+          reputation: 0,
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${answer.user_id}`
+        };
+        store.users.push(answerAuthor);
+      }
+      
+      answerAuthor.reputation = (answerAuthor.reputation || 0) + REPUTATION_RULES.ANSWER_ACCEPTED;
+
+      // Also award 'First Solution' badge if this is their first accepted answer
+      const userAcceptedCount = store.answers.filter(a => a.user_id === answer.user_id && a.is_accepted).length;
+      if (userAcceptedCount === 1) {
+        if (!store.user_badges.some(ub => ub.user_id === answer.user_id && ub.badge_slug === 'first_solution')) {
+          store.user_badges.push({
+            id: `ub-${Date.now()}`,
+            user_id: answer.user_id,
+            badge_slug: 'first_solution',
+            created_at: new Date().toISOString()
+          });
+        }
+      }
+
+      // Sync reputation to Supabase if configured
+      if (isSupabaseConfigured && supabase) {
+        try {
+          await supabase.from('profiles').update({ reputation: answerAuthor.reputation }).eq('id', answer.user_id);
+        } catch (dbErr) {
+          console.warn('Supabase DB reputation sync note:', dbErr.message);
+        }
       }
 
       // Send notification to answerer
@@ -349,7 +382,14 @@ router.post('/:id/accept', requireAuth, async (req, res) => {
 
       const answerAuthor = store.users.find(u => u.id === answer.user_id);
       if (answerAuthor) {
-        answerAuthor.reputation = Math.max(0, answerAuthor.reputation - REPUTATION_RULES.ANSWER_ACCEPTED);
+        answerAuthor.reputation = Math.max(0, (answerAuthor.reputation || 0) - REPUTATION_RULES.ANSWER_ACCEPTED);
+        if (isSupabaseConfigured && supabase) {
+          try {
+            await supabase.from('profiles').update({ reputation: answerAuthor.reputation }).eq('id', answer.user_id);
+          } catch (dbErr) {
+            console.warn('Supabase DB reputation sync note:', dbErr.message);
+          }
+        }
       }
     }
 

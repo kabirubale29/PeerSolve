@@ -28,6 +28,22 @@ function getUserProfileWithStats(user, isSelf = false) {
     .reduce((sum, a) => sum + (a.upvote_count || 0), 0);
   const totalUpvotes = questionUpvotes + answerUpvotes;
 
+  // Compute guaranteed accurate reputation (Accepted solution = +25, Q upvote = +10, Answer upvote = +15)
+  const calculatedRep = (acceptedAnswersCount * 25) + (questionUpvotes * 10) + (answerUpvotes * 15);
+  const effectiveReputation = Math.max(user.reputation || 0, calculatedRep);
+  user.reputation = effectiveReputation;
+
+  // Auto-award badges dynamically based on contributions
+  if (acceptedAnswersCount >= 1 && !store.user_badges.some(ub => ub.user_id === user.id && ub.badge_slug === 'first_solution')) {
+    store.user_badges.push({ id: `ub-${Date.now()}-1`, user_id: user.id, badge_slug: 'first_solution', created_at: new Date().toISOString() });
+  }
+  if (effectiveReputation >= 100 && !store.user_badges.some(ub => ub.user_id === user.id && ub.badge_slug === 'top_contributor')) {
+    store.user_badges.push({ id: `ub-${Date.now()}-2`, user_id: user.id, badge_slug: 'top_contributor', created_at: new Date().toISOString() });
+  }
+  if ((user.year >= SENIOR_YEAR_THRESHOLD || user.role === 'senior') && !store.user_badges.some(ub => ub.user_id === user.id && ub.badge_slug === 'senior_mentor')) {
+    store.user_badges.push({ id: `ub-${Date.now()}-3`, user_id: user.id, badge_slug: 'senior_mentor', created_at: new Date().toISOString() });
+  }
+
   // User badges
   const userBadges = store.user_badges
     .filter(ub => ub.user_id === user.id)
@@ -42,7 +58,7 @@ function getUserProfileWithStats(user, isSelf = false) {
     branch: user.branch || 'Computer Science',
     age: user.age || 20,
     role: user.role || (user.year >= SENIOR_YEAR_THRESHOLD ? 'senior' : 'junior'),
-    reputation: user.reputation || 0,
+    reputation: effectiveReputation,
     avatar_url: user.avatar_url,
     bio: user.bio || '',
     subjects: user.subjects || [],
