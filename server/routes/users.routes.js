@@ -53,6 +53,35 @@ function getUserProfileWithStats(user, isSelf = false) {
       total_upvotes: totalUpvotes
     },
     badges: userBadges,
+    questions: questions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(q => ({
+      id: q.id,
+      title: q.title,
+      description: q.description,
+      subject: q.subject,
+      status: q.status,
+      upvote_count: q.upvote_count || 0,
+      answer_count: store.answers.filter(a => a.question_id === q.id).length,
+      has_accepted_answer: store.answers.some(a => a.question_id === q.id && a.is_accepted),
+      created_at: q.created_at,
+      is_anonymous: q.is_anonymous
+    })),
+    answers: answers.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(a => {
+      const q = store.questions.find(quest => quest.id === a.question_id);
+      return {
+        id: a.id,
+        question_id: a.question_id,
+        question_title: q?.title || 'Question',
+        question_subject: q?.subject || 'Academic',
+        content: a.content,
+        content_preview: a.content.slice(0, 160) + (a.content.length > 160 ? '...' : ''),
+        is_accepted: a.is_accepted,
+        ai_status: a.ai_status,
+        ai_feedback: a.ai_feedback,
+        upvote_count: a.upvote_count || 0,
+        created_at: a.created_at,
+        is_anonymous: a.is_anonymous
+      };
+    }),
     recent_questions: questions.slice(0, 5).map(q => ({
       id: q.id,
       title: q.title,
