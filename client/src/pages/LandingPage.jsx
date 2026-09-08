@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   Layers,
   Search,
@@ -17,13 +17,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 export default function LandingPage() {
-  const { isAuthenticated, loading } = useAuth();
-  const isExplicitLandingRoute = window.location.pathname === '/landing';
-
-  // Only redirect unprompted users on root / if authenticated and not explicitly viewing /landing
-  if (!loading && isAuthenticated && !isExplicitLandingRoute) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  const { isAuthenticated, profile, logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
@@ -39,18 +33,41 @@ export default function LandingPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
-            to="/login"
-            className="px-4 py-2 text-sm font-bold text-slate-700 hover:text-slate-900 transition-colors"
-          >
-            Log In
-          </Link>
-          <Link
-            to="/signup"
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
-          >
-            Get Started
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <div className="hidden sm:flex items-center gap-2 text-sm text-slate-600 mr-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Signed in as <strong className="text-slate-800">{profile?.full_name || 'Student'}</strong></span>
+              </div>
+              <Link
+                to="/dashboard"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
+              >
+                Go to Dashboard &rarr;
+              </Link>
+              <button
+                onClick={logout}
+                className="px-3.5 py-2 text-sm font-bold text-slate-600 hover:text-rose-600 transition-colors"
+              >
+                Log Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="px-4 py-2 text-sm font-bold text-slate-700 hover:text-slate-900 transition-colors"
+              >
+                Log In
+              </Link>
+              <Link
+                to="/signup"
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
+              >
+                Create Account
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -73,19 +90,51 @@ export default function LandingPage() {
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            to="/signup"
-            className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base rounded-2xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
-          >
-            <span>Get Started Free</span>
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-          <Link
-            to="/dashboard"
-            className="w-full sm:w-auto px-8 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-base rounded-2xl transition-all"
-          >
-            Explore Public Doubts
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link
+                to="/dashboard"
+                className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base rounded-2xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
+              >
+                <span>Go to Dashboard</span>
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <Link
+                to="/ask"
+                className="w-full sm:w-auto px-8 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-base rounded-2xl transition-all"
+              >
+                Ask a Doubt
+              </Link>
+              <button
+                onClick={logout}
+                className="w-full sm:w-auto px-6 py-3.5 text-slate-500 hover:text-rose-600 font-semibold text-sm transition-all"
+              >
+                Log Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/signup"
+                className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base rounded-2xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
+              >
+                <span>Create Account Free</span>
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <Link
+                to="/login"
+                className="w-full sm:w-auto px-8 py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-bold text-base rounded-2xl shadow-sm transition-all"
+              >
+                Log In
+              </Link>
+              <Link
+                to="/dashboard"
+                className="w-full sm:w-auto px-8 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-base rounded-2xl transition-all"
+              >
+                Explore Public Doubts
+              </Link>
+            </>
+          )}
         </div>
       </section>
 
