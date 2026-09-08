@@ -138,6 +138,14 @@ export function AuthProvider({ children }) {
           localStorage.setItem('peersolve_auth_token', data.session.access_token);
         }
         localStorage.setItem('peersolve_is_authenticated', 'true');
+        
+        // Immediately sync complete metadata to profile
+        try {
+          await api.updateMyProfile(metadata);
+        } catch (syncErr) {
+          console.warn('Initial profile sync note:', syncErr.message);
+        }
+
         await fetchProfile();
         return data;
       } else {

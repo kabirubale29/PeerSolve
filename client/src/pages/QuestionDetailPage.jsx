@@ -185,7 +185,7 @@ export default function QuestionDetailPage() {
               <span className={`font-bold ${author.isAnonymous ? 'text-slate-500 italic' : 'text-slate-900'}`}>
                 {author.name}
               </span>
-              <RoleBadge role={author.role} size="sm" />
+              <RoleBadge year={author.year} role={author.role} size="sm" />
               {!author.isAnonymous && <ReputationBadge reputation={author.reputation} size="sm" />}
             </div>
 

@@ -102,14 +102,26 @@ export default function ProfilePage() {
               <div className="flex flex-col sm:flex-row items-center sm:items-baseline gap-3">
                 <h1 className="text-2xl font-extrabold text-slate-900">{profileData.name}</h1>
                 <div className="flex items-center gap-2">
-                  <RoleBadge role={profileData.role} size="lg" />
+                  <RoleBadge year={profileData.year} role={profileData.role} size="lg" showDetailed={true} />
                   <ReputationBadge reputation={profileData.reputation || 0} size="lg" />
                 </div>
               </div>
 
-              <p className="text-xs text-slate-500 font-medium mt-1">
-                Year {profileData.year} Student • {profileData.branch}
-              </p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs text-slate-600 font-medium mt-2">
+                <span className="px-2.5 py-1 bg-slate-100 rounded-lg font-bold text-slate-800">
+                  {profileData.degree || 'B.Tech'}
+                </span>
+                <span>•</span>
+                <span>{profileData.branch}</span>
+                <span>•</span>
+                <span>Year {profileData.year}</span>
+                {profileData.age && (
+                  <>
+                    <span>•</span>
+                    <span>Age {profileData.age}</span>
+                  </>
+                )}
+              </div>
 
               {profileData.bio && (
                 <p className="text-sm text-slate-600 mt-3 max-w-xl leading-relaxed">

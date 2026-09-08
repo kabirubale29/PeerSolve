@@ -17,14 +17,28 @@ const AVAILABLE_SUBJECTS = [
   'Electronics'
 ];
 
+const DEGREE_OPTIONS = [
+  'B.Tech / B.E. (Engineering)',
+  'BCA (Computer Applications)',
+  'MCA (Master of Computer Applications)',
+  'M.Tech / M.E. (Postgraduate Engineering)',
+  'B.Sc (Computer Science / IT)',
+  'M.Sc (Computer Science / Data Science)',
+  'Diploma in Engineering',
+  'Ph.D / Doctorate Research',
+  'Other Degree'
+];
+
 export default function OnboardingPage() {
   const { profile, updateProfile } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
   const [name, setName] = useState(profile?.name || '');
+  const [degree, setDegree] = useState(profile?.degree || 'B.Tech / B.E. (Engineering)');
+  const [branch, setBranch] = useState(profile?.branch || 'Computer Science & Engineering (CSE)');
   const [year, setYear] = useState(profile?.year || 2);
-  const [branch, setBranch] = useState(profile?.branch || 'Computer Science');
+  const [age, setAge] = useState(profile?.age || 20);
   const [bio, setBio] = useState(profile?.bio || '');
   const [selectedSubjects, setSelectedSubjects] = useState(profile?.subjects || ['Java', 'Data Structures']);
   const [saving, setSaving] = useState(false);
@@ -49,8 +63,11 @@ export default function OnboardingPage() {
     try {
       await updateProfile({
         name: name.trim(),
-        year: Number(year),
+        degree: degree.trim(),
         branch: branch.trim(),
+        year: Number(year),
+        age: Number(age),
+        role: computedRole,
         bio: bio.trim(),
         subjects: selectedSubjects
       });
@@ -65,79 +82,113 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xl max-w-xl w-full p-8">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-xl max-w-xl w-full p-6 sm:p-8">
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
             <GraduationCap className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-extrabold text-slate-900">Set Up Academic Profile</h2>
           <p className="text-sm text-slate-500 mt-1">
-            Help your university community recognize your coursework and expertise.
+            Help your university community recognize your degree, coursework, and seniority.
           </p>
         </div>
 
-        <form onSubmit={handleComplete} className="space-y-5">
+        <form onSubmit={handleComplete} className="space-y-4">
           {/* Full Name */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Full Name
+              Full Name <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Rahul Sharma"
+              placeholder="e.g. Harshal Ubale"
               className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:bg-white focus:border-emerald-500 outline-none"
               required
             />
           </div>
 
-          {/* Academic Year & Branch */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Degree & Branch */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Current Year
+                Degree Pursuing <span className="text-rose-500">*</span>
               </label>
               <select
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-                className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 outline-none focus:border-emerald-500"
+                value={degree}
+                onChange={(e) => setDegree(e.target.value)}
+                className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:border-emerald-500"
               >
-                <option value={1}>1st Year (Freshman)</option>
-                <option value={2}>2nd Year (Sophomore)</option>
-                <option value={3}>3rd Year (Junior / Pre-final)</option>
-                <option value={4}>4th Year (Senior / Final Year)</option>
+                {DEGREE_OPTIONS.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Branch / Course
+                Branch / Stream <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
                 value={branch}
                 onChange={(e) => setBranch(e.target.value)}
-                placeholder="Computer Science"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:bg-white focus:border-emerald-500 outline-none"
+                placeholder="Computer Science & Eng"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold focus:bg-white focus:border-emerald-500 outline-none"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Academic Year & Age */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Academic Year <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:border-emerald-500"
+              >
+                <option value={1}>1st Year (Freshman / Junior)</option>
+                <option value={2}>2nd Year (Peer Guide — Senior to 1st Yr)</option>
+                <option value={3}>3rd Year (Senior Scholar)</option>
+                <option value={4}>4th Year (Final Year Senior Mentor)</option>
+                <option value={5}>5th+ Year (Postgraduate / Senior)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Age (Years)
+              </label>
+              <input
+                type="number"
+                min={16}
+                max={60}
+                value={age}
+                onChange={(e) => setAge(Number(e.target.value))}
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:border-emerald-500"
                 required
               />
             </div>
           </div>
 
           {/* Role Preview Card */}
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+          <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-slate-500 block">Assigned Community Role:</span>
-              <span className="text-sm font-extrabold text-slate-900 mt-0.5 block">
-                {computedRole === 'senior' ? 'Senior Mentor' : 'Junior Peer'}
+              <span className="text-xs font-bold text-slate-500 block">Assigned Community Standing:</span>
+              <span className="text-xs font-extrabold text-slate-900 mt-0.5 block">
+                {year === 1 && '🌱 1st Year: Junior Peer'}
+                {year === 2 && '⚡ 2nd Year: Peer Guide'}
+                {year === 3 && '⭐ 3rd Year: Senior Scholar'}
+                {year >= 4 && '🎓 Final Year: Senior Mentor'}
               </span>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                (Based on Year {year}: Year 3+ receives Senior status)
-              </p>
             </div>
-            <RoleBadge role={computedRole} size="lg" />
+            <RoleBadge year={year} role={computedRole} size="lg" />
           </div>
 
           {/* Subject Interests */}

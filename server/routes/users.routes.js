@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { store } from '../services/mockData.js';
 import { SENIOR_YEAR_THRESHOLD } from '../config/constants.js';
+import { supabase, isSupabaseConfigured } from '../services/supabase.js';
 
 const router = Router();
 
@@ -36,12 +37,14 @@ function getUserProfileWithStats(user, isSelf = false) {
   return {
     id: user.id,
     name: user.name,
-    year: user.year,
-    branch: user.branch,
-    role: user.role,
-    reputation: user.reputation,
+    degree: user.degree || 'B.Tech',
+    year: user.year || 1,
+    branch: user.branch || 'Computer Science',
+    age: user.age || 20,
+    role: user.role || (user.year >= SENIOR_YEAR_THRESHOLD ? 'senior' : 'junior'),
+    reputation: user.reputation || 0,
     avatar_url: user.avatar_url,
-    bio: user.bio,
+    bio: user.bio || '',
     subjects: user.subjects || [],
     stats: {
       questions_count: questions.length,
@@ -82,22 +85,52 @@ function getUserProfileWithStats(user, isSelf = false) {
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const meta = req.user.user_metadata || {};
     let user = store.users.find(u => u.id === userId);
 
+    // If Supabase is configured, attempt to load profile from database
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: dbProfile } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+        if (dbProfile) {
+          if (!user) {
+            user = { ...dbProfile };
+            store.users.push(user);
+          } else {
+            Object.assign(user, dbProfile);
+          }
+        }
+      } catch (dbErr) {
+        console.warn('Supabase DB fetch profile note:', dbErr.message);
+      }
+    }
+
     if (!user) {
-      // Auto-create basic profile if first time
+      // Auto-create profile from auth metadata / defaults
+      const rawName = meta.name || meta.full_name || (req.user.email ? req.user.email.split('@')[0] : 'Student');
+      const year = meta.year ? Number(meta.year) : 1;
       user = {
         id: userId,
-        name: 'New Student',
-        year: 1,
-        branch: 'Computer Science',
-        role: 'junior',
+        name: rawName,
+        degree: meta.degree || 'B.Tech',
+        year: year,
+        branch: meta.branch || 'Computer Science',
+        age: meta.age ? Number(meta.age) : 20,
+        role: year >= SENIOR_YEAR_THRESHOLD ? 'senior' : 'junior',
         reputation: 0,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-        bio: '',
-        subjects: ['Java', 'Data Structures']
+        avatar_url: meta.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+        bio: meta.bio || '',
+        subjects: meta.subjects || ['Java', 'Data Structures']
       };
       store.users.push(user);
+    } else {
+      // If user exists but name was generic, update from meta
+      if (meta.name && (user.name === 'New Student' || user.name === 'User')) {
+        user.name = meta.name;
+      }
+      if (meta.degree && !user.degree) user.degree = meta.degree;
+      if (meta.branch && !user.branch) user.branch = meta.branch;
+      if (meta.age && !user.age) user.age = Number(meta.age);
     }
 
     const profile = getUserProfileWithStats(user, true);
@@ -118,7 +151,15 @@ router.get('/:id', optionalAuth, async (req, res) => {
     const requestingUserId = req.user ? req.user.id : null;
     const isSelf = requestingUserId === id;
 
-    const user = store.users.find(u => u.id === id);
+    let user = store.users.find(u => u.id === id);
+    if (!user && isSupabaseConfigured && supabase) {
+      const { data: dbProfile } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
+      if (dbProfile) {
+        user = { ...dbProfile };
+        store.users.push(user);
+      }
+    }
+
     if (!user) {
       return res.status(404).json({ error: 'User not found.' });
     }
@@ -138,7 +179,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 router.put('/profile', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, year, branch, bio, subjects } = req.body;
+    const { name, year, branch, degree, age, bio, subjects } = req.body;
 
     let user = store.users.find(u => u.id === userId);
     if (!user) {
@@ -151,14 +192,33 @@ router.put('/profile', requireAuth, async (req, res) => {
     }
 
     if (name) user.name = name.trim();
+    if (degree) user.degree = degree.trim();
     if (year !== undefined) {
       user.year = Number(year);
-      // Auto-assign role based on configurable threshold
+      // Auto-assign role based on configurable threshold (Year 3+ is Senior)
       user.role = user.year >= SENIOR_YEAR_THRESHOLD ? 'senior' : 'junior';
     }
     if (branch) user.branch = branch.trim();
+    if (age !== undefined) user.age = Number(age);
     if (bio !== undefined) user.bio = bio.trim();
     if (Array.isArray(subjects)) user.subjects = subjects;
+
+    // Sync to Supabase if configured
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('profiles').upsert({
+          id: userId,
+          name: user.name,
+          year: user.year,
+          branch: user.branch,
+          role: user.role,
+          bio: user.bio,
+          subjects: user.subjects
+        });
+      } catch (dbErr) {
+        console.warn('Supabase DB profile upsert note:', dbErr.message);
+      }
+    }
 
     res.json({
       message: 'Profile updated successfully!',
