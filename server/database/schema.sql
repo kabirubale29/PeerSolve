@@ -447,12 +447,16 @@ CREATE POLICY "Public can view user_badges" ON user_badges FOR SELECT USING (tru
 -- AUTO-CREATE PROFILE ON SUPABASE AUTH SIGNUP
 -- ============================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
+RETURNS trigger 
+LANGUAGE plpgsql 
+SECURITY DEFINER 
+SET search_path = public
+AS $$
 BEGIN
   INSERT INTO public.profiles (id, name, year, branch, role, reputation, avatar_url, bio, subjects)
   VALUES (
     new.id,
-    COALESCE(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+    COALESCE(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1), 'Student'),
     COALESCE((new.raw_user_meta_data->>'year')::int, 1),
     COALESCE(new.raw_user_meta_data->>'branch', 'Computer Science'),
     CASE WHEN COALESCE((new.raw_user_meta_data->>'year')::int, 1) >= 3 THEN 'senior'::user_role ELSE 'junior'::user_role END,
@@ -463,8 +467,12 @@ BEGIN
   )
   ON CONFLICT (id) DO NOTHING;
   RETURN new;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Fallback so auth.users insertion is never blocked
+    RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
