@@ -13,6 +13,8 @@ export default function SignupPage() {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
+  const [emailSent, setEmailSent] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !email || !password) {
@@ -22,9 +24,16 @@ export default function SignupPage() {
 
     setSubmitting(true);
     try {
-      await signup(email, password, { name });
-      showToast('Account created! Please set up your academic profile.', 'success');
-      navigate('/onboarding');
+      const res = await signup(email, password, { name });
+      
+      // If email confirmation is enabled on Supabase, session will be null initially
+      if (res && res.user && !res.session) {
+        setEmailSent(true);
+        showToast('Confirmation email sent! Please check your inbox.', 'info');
+      } else {
+        showToast('Account created! Please set up your academic profile.', 'success');
+        navigate('/onboarding');
+      }
     } catch (err) {
       showToast(err.message || 'Registration failed.', 'error');
     } finally {
@@ -35,89 +44,114 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl border border-slate-200 shadow-xl max-w-md w-full p-8">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md">
-              <Layers className="w-5 h-5" />
+        {emailSent ? (
+          <div className="text-center py-6 space-y-4 animate-in fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2 border border-emerald-100">
+              <Mail className="w-8 h-8" />
             </div>
-            <span className="font-extrabold text-2xl text-slate-900 tracking-tight">
-              Peer<span className="text-emerald-600">Solve</span>
-            </span>
-          </Link>
-          <h2 className="text-2xl font-extrabold text-slate-900">Create Student Account</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Join your university doubt solving network.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Full Name
-            </label>
-            <div className="relative">
-              <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Rahul Sharma"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none"
-                required
-              />
+            <h3 className="text-xl font-extrabold text-slate-900">Check Your Inbox</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              We have sent a verification link to <span className="font-bold text-slate-900">{email}</span>.
+            </p>
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-500 text-left space-y-2">
+              <p className="font-semibold text-slate-700">Next steps:</p>
+              <p>1. Open the confirmation link in your email.</p>
+              <p>2. Once verified, return here and sign in to complete your profile.</p>
             </div>
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl shadow-md transition-all"
+            >
+              Go to Sign In
+            </Link>
           </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              University Email
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@university.edu"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none"
-                required
-              />
+        ) : (
+          <>
+            <div className="text-center mb-8">
+              <Link to="/" className="inline-flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <span className="font-extrabold text-2xl text-slate-900 tracking-tight">
+                  Peer<span className="text-emerald-600">Solve</span>
+                </span>
+              </Link>
+              <h2 className="text-2xl font-extrabold text-slate-900">Create Student Account</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Join your university doubt solving network.
+              </p>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none"
-                required
-              />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Rahul Sharma"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  University Email
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="student@university.edu"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2"
+              >
+                <span>{submitting ? 'Creating Account...' : 'Continue to Onboarding'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
+
+            <div className="mt-6 text-center text-xs text-slate-500">
+              Already have an account?{' '}
+              <Link to="/login" className="text-emerald-600 font-bold hover:underline">
+                Sign In
+              </Link>
             </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2"
-          >
-            <span>{submitting ? 'Creating Account...' : 'Continue to Onboarding'}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
-
-        <div className="mt-6 text-center text-xs text-slate-500">
-          Already have an account?{' '}
-          <Link to="/login" className="text-emerald-600 font-bold hover:underline">
-            Sign In
-          </Link>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
