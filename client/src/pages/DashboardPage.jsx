@@ -91,21 +91,21 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-[#FAF7F2] flex flex-col">
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome & Search Hero Banner */}
-        <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-sm mb-8 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-amber-900 via-orange-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-md mb-8 relative overflow-hidden border border-amber-900/20">
           <div className="relative z-10 max-w-2xl">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-emerald-200 text-xs font-bold uppercase tracking-wider mb-3">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-amber-200 text-xs font-bold uppercase tracking-wider mb-3">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               Search Before You Ask
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            <h1 className="font-serif text-2xl sm:text-3xl font-extrabold tracking-tight">
               Got an academic doubt?
             </h1>
-            <p className="mt-2 text-emerald-100 text-sm leading-relaxed">
+            <p className="mt-2 text-amber-100 text-sm leading-relaxed font-sans">
               Chances are another student already asked it. Search our peer knowledge base to find verified answers immediately.
             </p>
 
@@ -117,7 +117,7 @@ export default function DashboardPage() {
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder="Search doubts by title, concept, or code (e.g. polymorphism, O(log n), 3NF)..."
-                className="w-full pl-12 pr-4 py-3.5 bg-white text-slate-900 placeholder-slate-400 rounded-2xl shadow-md border-0 outline-none text-sm font-medium focus:ring-4 focus:ring-emerald-400/20"
+                className="w-full pl-12 pr-4 py-3.5 bg-white text-slate-900 placeholder-slate-400 rounded-2xl shadow-md border-0 outline-none text-sm font-medium focus:ring-4 focus:ring-amber-500/20"
               />
             </div>
           </div>
