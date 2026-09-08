@@ -442,3 +442,31 @@ CREATE POLICY "Users update own notifications" ON notifications FOR UPDATE USING
 -- Badges: Public can view badges and user_badges
 CREATE POLICY "Public can view badges" ON badges FOR SELECT USING (true);
 CREATE POLICY "Public can view user_badges" ON user_badges FOR SELECT USING (true);
+
+-- ============================================================================
+-- AUTO-CREATE PROFILE ON SUPABASE AUTH SIGNUP
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, name, year, branch, role, reputation, avatar_url, bio, subjects)
+  VALUES (
+    new.id,
+    COALESCE(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+    COALESCE((new.raw_user_meta_data->>'year')::int, 1),
+    COALESCE(new.raw_user_meta_data->>'branch', 'Computer Science'),
+    CASE WHEN COALESCE((new.raw_user_meta_data->>'year')::int, 1) >= 3 THEN 'senior'::user_role ELSE 'junior'::user_role END,
+    0,
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=' || new.id,
+    COALESCE(new.raw_user_meta_data->>'bio', ''),
+    ARRAY['Java', 'Data Structures']
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
