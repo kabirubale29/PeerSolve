@@ -19,6 +19,38 @@ function withTimeout(promise, ms = AI_CONFIG.TIMEOUT_MS) {
 }
 
 /**
+ * Resilient multi-model generation with automatic failover
+ */
+async function generateWithFallback(prompt) {
+  if (!genAI) throw new Error('Gemini API is not configured');
+
+  const candidateModels = [
+    AI_CONFIG.MODEL_NAME || 'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-flash-latest'
+  ];
+
+  let lastError = null;
+
+  for (const modelName of candidateModels) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const response = await withTimeout(
+        model.generateContent(prompt),
+        AI_CONFIG.TIMEOUT_MS
+      );
+      const text = response.response.text().trim();
+      return text;
+    } catch (err) {
+      console.warn(`Model ${modelName} failed (${err.message}), trying next candidate...`);
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error('All candidate models failed');
+}
+
+/**
  * Generate 768-dimensional embedding for semantic search
  */
 export async function generateEmbedding(text) {
@@ -97,12 +129,7 @@ Return ONLY valid JSON in this exact structure without markdown or backticks:
 }`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: AI_CONFIG.MODEL_NAME });
-    const response = await withTimeout(
-      model.generateContent(prompt),
-      AI_CONFIG.TIMEOUT_MS
-    );
-    const text = response.response.text().trim();
+    const text = await generateWithFallback(prompt);
     const cleanJson = text.replace(/```json/gi, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleanJson);
     
@@ -158,12 +185,7 @@ Return ONLY valid JSON in this exact format without backticks:
 }`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: AI_CONFIG.MODEL_NAME });
-    const response = await withTimeout(
-      model.generateContent(prompt),
-      AI_CONFIG.TIMEOUT_MS
-    );
-    const text = response.response.text().trim();
+    const text = await generateWithFallback(prompt);
     const cleanJson = text.replace(/```json/gi, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleanJson);
     return {
@@ -211,12 +233,7 @@ Return ONLY valid JSON without backticks in this format:
 }`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: AI_CONFIG.MODEL_NAME });
-    const response = await withTimeout(
-      model.generateContent(prompt),
-      AI_CONFIG.TIMEOUT_MS
-    );
-    const text = response.response.text().trim();
+    const text = await generateWithFallback(prompt);
     const cleanJson = text.replace(/```json/gi, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleanJson);
     return parsed;
