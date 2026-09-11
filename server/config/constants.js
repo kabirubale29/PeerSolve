@@ -13,7 +13,7 @@ export const REPUTATION_RULES = {
 export const REPORT_UNDER_REVIEW_THRESHOLD = 3;
 
 export const AI_CONFIG = {
-  MODEL_NAME: 'gemini-3.6-flash',
+  MODEL_NAME: 'gemini-1.5-flash',
   EMBEDDING_MODEL: 'text-embedding-004',
   TIMEOUT_MS: 25000,
   RATE_LIMIT_WINDOW_MS: 60 * 1000, // 1 minute

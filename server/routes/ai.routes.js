@@ -35,7 +35,7 @@ router.post('/similar-questions', optionalAuth, async (req, res) => {
         match_count: 5
       });
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         return res.json({
           matches: data.map(q => ({
             id: q.id,

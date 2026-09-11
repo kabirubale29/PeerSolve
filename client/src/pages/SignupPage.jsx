@@ -213,7 +213,7 @@ export default function SignupPage() {
                   <span>Student Registration</span>
                 </div>
                 <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                  Create Student Account
+                  Create Account
                 </h1>
                 <p className="text-xs text-slate-500 mt-1">
                   Join your college doubt solving forum and collaborate across batches.
